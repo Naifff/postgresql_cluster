@@ -9,9 +9,9 @@
 
 ### Production-ready PostgreSQL High-Availability Cluster (based on Patroni). Automating with Ansible.
 
-`postgresql_cluster` automates the deployment and management of highly available PostgreSQL clusters in production environments. This solution is tailored for use on dedicated physical servers, virtual machines, and within both on-premises and cloud-based infrastructures.
+`postgresql_cluster` автоматизирует развертывание и управление высокодоступными кластерами PostgreSQL в производственных средах. Это решение предназначено для использования на выделенных физических серверах, виртуальных машинах, а также в локальных и облачных инфраструктурах.
 
-You can find a version of this documentation that is searchable and also easier to navigate at [postgresql-cluster.org](http://postgresql-cluster.org)
+Вы можете найти версию этой документации с возможностью поиска и более удобной навигацией по адресу [postgresql-cluster.org](http://postgresql-cluster.org)
 
 <a href="https://www.producthunt.com/posts/postgresql-cluster-org?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-postgresql&#0045;cluster&#0045;org" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=583645&theme=light" alt="postgresql&#0045;cluster&#0046;org - The&#0032;open&#0045;source&#0032;alternative&#0032;to&#0032;cloud&#0045;managed&#0032;databases | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
@@ -24,69 +24,69 @@ You can find a version of this documentation that is searchable and also easier 
 ![postgresql_cluster](images/postgresql_cluster.png#gh-light-mode-only)
 ![postgresql_cluster](images/postgresql_cluster.dark_mode.png#gh-dark-mode-only)
 
-You have three schemes available for deployment:
+У вас есть три схемы, доступные для развертывания:
 
 #### 1. PostgreSQL High-Availability only
 
-This is simple scheme without load balancing.
+Это простая схема без балансировки нагрузки.
 
 ##### Components:
 
-- [**Patroni**](https://github.com/zalando/patroni) is a template for you to create your own customized, high-availability solution using Python and - for maximum accessibility - a distributed configuration store like ZooKeeper, etcd, Consul or Kubernetes. Used for automate the management of PostgreSQL instances and auto failover.
+- [**Patroni**](https://github.com/zalando/patroni) это шаблон для создания собственного специализированного решения высокой доступности с использованием Python и - для максимальной доступности - распределенного хранилища конфигурации, например ZooKeeper, etcd, Consul или Kubernetes. Используется для автоматизации управления экземплярами PostgreSQL и автоматического обхода отказа.
 
-- [**etcd**](https://github.com/etcd-io/etcd) is a distributed reliable key-value store for the most critical data of a distributed system. etcd is written in Go and uses the [Raft](https://raft.github.io/) consensus algorithm to manage a highly-available replicated log. It is used by Patroni to store information about the status of the cluster and PostgreSQL configuration parameters. [What is Distributed Consensus?](http://thesecretlivesofdata.com/raft/)
+- [**etcd**](https://github.com/etcd-io/etcd) это распределенное надежное хранилище ключевых значений для наиболее важных данных распределенной системы. etcd написан на языке Go и использует [Raft](https://raft.github.io/) алгоритм консенсуса для управления высокодоступным реплицированным журналом. Он используется Patroni для хранения информации о состоянии кластера и параметров конфигурации PostgreSQL. [What is Distributed Consensus?](http://thesecretlivesofdata.com/raft/)
 
-- [**vip-manager**](https://github.com/cybertec-postgresql/vip-manager) (_optional, if the `cluster_vip` variable is specified_) is a service that gets started on all cluster nodes and connects to the DCS. If the local node owns the leader-key, vip-manager starts the configured VIP. In case of a failover, vip-manager removes the VIP on the old leader and the corresponding service on the new leader starts it there. Used to provide a single entry point (VIP) for database access.
+- [**vip-manager**](https://github.com/cybertec-postgresql/vip-manager) (_optional, if the `cluster_vip` variable is specified_) это служба, которая запускается на всех узлах кластера и подключается к DCS. Если локальный узел владеет ключом лидера, vip-manager запускает сконфигурированный VIP. В случае обхода отказа vip-manager удаляет VIP на старом лидере, а соответствующая служба на новом лидере запускает его. Используется для обеспечения единой точки входа (VIP) для доступа к базе данных.
 
-- [**PgBouncer**](https://pgbouncer.github.io/features.html) (optional, if the `pgbouncer_install` variable is `true`) is a connection pooler for PostgreSQL.
+- [**PgBouncer**](https://pgbouncer.github.io/features.html) (optional, if the `pgbouncer_install` variable is `true`) является пулом соединений для PostgreSQL.
 
 #### 2. PostgreSQL High-Availability with Load Balancing
 
-This scheme enables load distribution for read operations and also allows for scaling out the cluster with read-only replicas.
+Эта схема позволяет распределить нагрузку на операции чтения, а также масштабировать кластер с помощью реплик, предназначенных только для чтения.
 
-When deploying to cloud providers such as AWS, GCP, Azure, DigitalOcean, and Hetzner Cloud, a cloud load balancer is automatically created by default to provide a single entry point to the database (controlled by the `cloud_load_balancer` variable).
+При развертывании на облачных провайдерах, таких как AWS, GCP, Azure, DigitalOcean и Hetzner Cloud, по умолчанию автоматически создается облачный балансировщик нагрузки для обеспечения единой точки входа в базу данных (управляется переменной `cloud_load_balancer`).
 
-For non-cloud environments, such as when deploying on Your Own Machines, the HAProxy load balancer is available for use. To enable it, set `with_haproxy_load_balancing: true` in the vars/main.yml file.
+Для необлачных сред, например при развертывании на собственных машинах, можно использовать балансировщик нагрузки HAProxy. Чтобы включить его, установите значение `with_haproxy_load_balancing: true` в файле vars/main.yml.
 
 > [!NOTE]
-> Your application must have support sending read requests to a custom port 5001, and write requests to port 5000.
+> Ваше приложение должно поддерживать отправку запросов на чтение на пользовательский порт 5001, а на запись - на порт 5000.
 
-List of ports when using HAProxy:
-- port 5000 (read / write) master
-- port 5001 (read only) all replicas
-- port 5002 (read only) synchronous replica only
-- port 5003 (read only) asynchronous replicas only
+Список портов при использовании HAProxy:
+- порт 5000 (чтение / запись) мастер
+- порт 5001 (только чтение) все реплики
+- порт 5002 (только чтение) только синхронные реплики
+- порт 5003 (только чтение) только асинхронные реплики
 
 ##### Components of HAProxy load balancing:
 
-- [**HAProxy**](http://www.haproxy.org/) is a free, very fast and reliable solution offering high availability, load balancing, and proxying for TCP and HTTP-based applications. 
+- [**HAProxy**](http://www.haproxy.org/) это бесплатное, очень быстрое и надежное решение, обеспечивающее высокую доступность, балансировку нагрузки и проксирование для TCP- и HTTP-приложений. 
 
-- [**confd**](https://github.com/kelseyhightower/confd) manage local application configuration files using templates and data from etcd or consul. Used to automate HAProxy configuration file management.
+- [**confd**](https://github.com/kelseyhightower/confd) Управление локальными конфигурационными файлами приложений с помощью шаблонов и данных из etcd или consul. Используется для автоматизации управления конфигурационными файлами HAProxy.
 
-- [**Keepalived**](https://github.com/acassen/keepalived)  (_optional, if the `cluster_vip` variable is specified_) provides a virtual high-available IP address (VIP) and single entry point for databases access.
-Implementing VRRP (Virtual Router Redundancy Protocol) for Linux. In our configuration keepalived checks the status of the HAProxy service and in case of a failure delegates the VIP to another server in the cluster.
+- [**Keepalived**](https://github.com/acassen/keepalived)  (_опционально, если указана переменная `cluster_vip`) предоставляет виртуальный высокодоступный IP-адрес (VIP) и единую точку входа для доступа к базам данных.
+Реализация протокола VRRP (Virtual Router Redundancy Protocol) для Linux. В нашей конфигурации keepalived проверяет статус службы HAProxy и в случае сбоя делегирует VIP другому серверу в кластере.
 
-#### 3. PostgreSQL High-Availability with Consul Service Discovery
+#### 3. PostgreSQL High-Availability с Consul Service Discovery
 
-To use this scheme, specify `dcs_type: consul` in variable file vars/main.yml
+Чтобы использовать эту схему, укажите `dcs_type: consul` в файле переменных vars/main.yml
 
-This scheme is suitable for master-only access and for load balancing (using DNS) for reading across replicas. Consul [Service Discovery](https://developer.hashicorp.com/consul/docs/concepts/service-discovery) with [DNS resolving ](https://developer.hashicorp.com/consul/docs/discovery/dns) is used as a client access point to the database.
+Эта схема подходит для доступа только к мастеру и для балансировки нагрузки (с помощью DNS) для чтения между репликами. В качестве клиентской точки доступа к базе данных используется Consul [Service Discovery](https://developer.hashicorp.com/consul/docs/concepts/service-discovery) с [DNS resolving ](https://developer.hashicorp.com/consul/docs/discovery/dns).
 
-Client access point (example):
+Клиентская точка доступа (пример):
 
-- `master.postgres-cluster.service.consul`
-- `replica.postgres-cluster.service.consul`
+- `master.postgres-cluster.service.consul`.
+- `replica.postgres-cluster.service.consul`.
 
-Besides, it can be useful for a distributed cluster across different data centers. We can specify in advance which data center the database server is located in and then use this for applications running in the same data center. 
+Кроме того, это может быть полезно для распределенного кластера по разным дата-центрам. Мы можем заранее указать, в каком дата-центре находится сервер базы данных, а затем использовать его для приложений, работающих в том же дата-центре. 
 
-Example: `replica.postgres-cluster.service.dc1.consul`, `replica.postgres-cluster.service.dc2.consul`
+Пример: `replica.postgres-cluster.service.dc1.consul`, `replica.postgres-cluster.service.dc2.consul`.
 
-It requires the installation of a consul in client mode on each application server for service DNS resolution (or use [forward DNS](https://developer.hashicorp.com/consul/tutorials/networking/dns-forwarding?utm_source=docs) to the remote consul server instead of installing a local consul client).
+Требуется установка consul в режиме клиента на каждом сервере приложений для разрешения служебных DNS (или использование [forward DNS](https://developer.hashicorp.com/consul/tutorials/networking/dns-forwarding?utm_source=docs) на удаленный сервер consul вместо установки локального клиента consul).
 
-## Compatibility
-RedHat and Debian based distros (x86_64)
+## Совместимость
+Дистрибутивы на базе RedHat и Debian (x86_64)
 
-###### Supported Linux Distributions:
+###### Поддерживаемые дистрибутивы Linux:
 - **Debian**: 11, 12
 - **Ubuntu**: 22.04, 24.04
 - **CentOS Stream**: 9
@@ -94,12 +94,12 @@ RedHat and Debian based distros (x86_64)
 - **Rocky Linux**: 8, 9
 - **AlmaLinux**: 8, 9
 
-###### PostgreSQL versions: 
-all supported PostgreSQL versions
+###### Версии PostgreSQL: 
+все поддерживаемые версии PostgreSQL
 
-:white_check_mark: tested, works fine: PostgreSQL 10, 11, 12, 13, 14, 15, 16, 17
+:white_check_mark: проверено, работает нормально: PostgreSQL 10, 11, 12, 13, 14, 15, 16, 17
 
-_Table of results of daily automated testing of cluster deployment:_
+Таблица результатов ежедневного автоматизированного тестирования развертывания кластера:_
 | Distribution | Test result |
 |--------------|:----------:|
 | Debian 11    | [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/vitabaks/postgresql_cluster/schedule_pg_debian11.yml?branch=master)](https://github.com/vitabaks/postgresql_cluster/actions/workflows/schedule_pg_debian11.yml) |
@@ -114,93 +114,93 @@ _Table of results of daily automated testing of cluster deployment:_
 | AlmaLinux 8 | [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/vitabaks/postgresql_cluster/schedule_pg_almalinux8.yml?branch=master)](https://github.com/vitabaks/postgresql_cluster/actions/workflows/schedule_pg_almalinux8.yml) |
 | AlmaLinux 9 | [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/vitabaks/postgresql_cluster/schedule_pg_almalinux9.yml?branch=master)](https://github.com/vitabaks/postgresql_cluster/actions/workflows/schedule_pg_almalinux9.yml) |
 
-###### Ansible version 
-Minimum supported Ansible version: 8.0.0 (ansible-core 2.15.0)
+###### Версия Ansible 
+Минимальная поддерживаемая версия Ansible: 8.0.0 (ansible-core 2.15.0)
 
-## Requirements
+## Требования
 
-<details><summary>Click here to expand...</summary><p>
+<details><summary>Нажмите здесь, чтобы развернуть...</summary><p>
 
-This playbook requires root privileges or sudo.
+Для работы с этим плейбуком требуются права root или sudo.
 
-Ansible ([What is Ansible](https://www.ansible.com/how-ansible-works/)?)
+Ansible ([Что такое Ansible](https://www.ansible.com/how-ansible-works/)?)
 
-if dcs_type: "consul", please install consul role requirements on the control node:
+if dcs_type: «consul», пожалуйста, установите требования роли consul на управляющем узле:
 
-`ansible-galaxy install -r roles/consul/requirements.yml`
+`ansible-galaxy install -r roles/consul/requirements.yml`.
 
-### Port requirements
-List of required TCP ports that must be open for the database cluster:
+### Требования к портам
+Список необходимых TCP-портов, которые должны быть открыты для кластера баз данных:
 
 - `5432` (postgresql)
 - `6432` (pgbouncer)
 - `8008` (patroni rest api)
 - `2379`, `2380` (etcd)
 
-for the scheme "[Type A] PostgreSQL High-Availability with Load Balancing":
+для схемы «[Type A] PostgreSQL High-Availability with Load Balancing»:
 
-- `5000` (haproxy - (read/write) master)
-- `5001` (haproxy - (read only) all replicas)
-- `5002` (haproxy - (read only) synchronous replica only)
-- `5003` (haproxy - (read only) asynchronous replicas only)
-- `7000` (optional, haproxy stats)
+- `5000` (haproxy - (чтение/запись) master)
+- `5001` (haproxy - (только чтение) все реплики)
+- `5002` (haproxy - (только чтение) только синхронная реплика)
+- `5003` (haproxy - (только чтение) только асинхронные реплики)
+- `7000` (опционально, статистика haproxy)
 
-for the scheme "[Type C] PostgreSQL High-Availability with Consul Service Discovery (DNS)":
+для схемы «[Type C] PostgreSQL High-Availability with Consul Service Discovery (DNS)»:
 
 - `8300` (Consul Server RPC)
 - `8301` (Consul Serf LAN)
 - `8302` (Consul Serf WAN)
 - `8500` (Consul HTTP API)
-- `8600` (Consul DNS server)
+- `8600` (Consul DNS сервер)
 
 </p></details>
 
-## Recommenations
+## Рекомендации
 
 <details><summary>Click here to expand...</summary><p>
 
-- **linux (Operation System)**: 
+- **linux (операционная система)**: 
 
-Update your operating system on your target servers before deploying;
+Перед развертыванием обновите операционную систему на целевых серверах;
 
-Make sure you have time synchronization is configured (NTP).
-Specify `ntp_enabled:'true'` and `ntp_servers` if you want to install and configure the ntp service.
+Убедитесь, что у вас настроена синхронизация времени (NTP).
+Укажите `ntp_enabled:'true'` и `ntp_servers`, если вы хотите установить и настроить службу ntp.
 
 - **DCS (Distributed Consensus Store)**: 
 
-Fast drives and a reliable network are the most important factors for the performance and stability of an etcd (or consul) cluster.
+Быстрые диски и надежная сеть являются наиболее важными факторами для производительности и стабильности кластера etcd (или consul).
 
-Avoid storing etcd (or consul) data on the same drive along with other processes (such as the database) that are intensively using the resources of the disk subsystem! 
-Store the etcd and postgresql data on **different** disks (see `etcd_data_dir`, `consul_data_path` variables), use ssd drives if possible.
-See [hardware recommendations](https://etcd.io/docs/v3.3/op-guide/hardware/) and [tuning](https://etcd.io/docs/v3.3/tuning/) guides.
+Избегайте хранения данных etcd (или consul) на одном диске с другими процессами (например, базой данных), которые интенсивно используют ресурсы дисковой подсистемы! 
+Храните данные etcd и postgresql на **разных** дисках (см. переменные `etcd_data_dir`, `consul_data_path`), по возможности используйте ssd-диски.
+См. руководства [рекомендации по оборудованию](https://etcd.io/docs/v3.3/op-guide/hardware/) и [настройка](https://etcd.io/docs/v3.3/tuning/).
 
-It is recommended to deploy the DCS cluster on dedicated servers, separate from the database servers.
+Кластер DCS рекомендуется размещать на выделенных серверах, отдельно от серверов баз данных.
 
-- **Placement of cluster members in different data centers**:
+- **Размещение участников кластера в разных дата-центрах**:
 
-If you’d prefer a cross-data center setup, where the replicating databases are located in different data centers, etcd member placement becomes critical.
+Если вы предпочитаете кросс-центровую установку, когда реплицируемые базы данных расположены в разных дата-центрах, размещение членов etcd становится критически важным.
 
-There are quite a lot of things to consider if you want to create a really robust etcd cluster, but there is one rule: *do not placing all etcd members in your primary data center*. See some [examples](https://www.cybertec-postgresql.com/en/introduction-and-how-to-etcd-clusters-for-patroni/).
+Если вы хотите создать действительно надежный etcd-кластер, необходимо учитывать множество моментов, но есть одно правило: *не размещайте все члены etcd в вашем основном центре обработки данных*. Посмотрите некоторые [примеры](https://www.cybertec-postgresql.com/en/introduction-and-how-to-etcd-clusters-for-patroni/).
 
 
-- **How to prevent data loss in case of autofailover (synchronous_modes)**:
+- **Как предотвратить потерю данных при автоотказе (synchronous_modes)**:
 
-Due to performance reasons, a synchronous replication is disabled by default.
+По соображениям производительности синхронная репликация по умолчанию отключена.
 
-To minimize the risk of losing data on autofailover, you can configure settings in the following way:
+Чтобы минимизировать риск потери данных при автоотказе, вы можете настроить параметры следующим образом:
 - synchronous_mode: 'true'
 - synchronous_mode_strict: 'true'
-- synchronous_commit: 'on' (or 'remote_apply')
+- synchronous_commit: 'on' (или 'remote_apply')
 
 </p></details>
 
-## Getting Started
+## Начало работы
 
-You have the option to easily deploy Postgres clusters using the Console (UI) or from the command line with the ansible-playbook command.
+У вас есть возможность легко развернуть кластеры Postgres с помощью консоли (UI) или из командной строки с помощью команды ansible-playbook.
 
-### Console (UI)
+### Консоль (пользовательский интерфейс)
 
-To run the PostgreSQL Cluster Console, execute the following command:
+Чтобы запустить консоль кластера PostgreSQL, выполните следующую команду:
 
 ```
 docker run -d --name pg-console \
@@ -216,160 +216,160 @@ docker run -d --name pg-console \
   vitabaks/postgresql_cluster_console:2.0.0
 ```
 
-> [!NOTE]
-> If you are running the console on a dedicated server (rather than on your laptop), replace `localhost` with the server’s IP address in the `PG_CONSOLE_API_URL` variable.
+> [!ПРИМЕЧАНИЕ]
+> Если вы запускаете консоль на выделенном сервере (а не на ноутбуке), замените `localhost` на IP-адрес сервера в переменной `PG_CONSOLE_API_URL`.
 
-> [!TIP]
-> It is recommended to run the console in the same network as your database servers to enable monitoring of the cluster status.
+> [!СОВЕТ]
+> Рекомендуется запускать консоль в той же сети, что и серверы баз данных, чтобы иметь возможность отслеживать состояние кластера.
 
 
-**Open the Console UI**:
+**Откройте пользовательский интерфейс консоли**:
 
-Go to http://localhost:80 (or the address of your server) and use `secret_token` for authorization.
+Перейдите по адресу http://localhost:80 (или адресу вашего сервера) и используйте `secret_token` для авторизации.
 
-![Cluster creation demo](images/pg_console_create_cluster_demo.gif)
+![Демонстрация создания кластера](images/pg_console_create_cluster_demo.gif)
 
-Refer to the [Deployment](https://postgresql-cluster.org/docs/category/deployment) section to learn more about the different deployment methods.
+Обратитесь к разделу [Развертывание](https://postgresql-cluster.org/docs/category/deployment), чтобы узнать больше о различных методах развертывания.
 
-### Command line
+### Командная строка
 
-<details><summary>Click here to expand... if you prefer the command line.</summary><p>
+<details><summary>Нажмите здесь, чтобы развернуть... если вы предпочитаете командную строку.</summary><p>
 
-0. [Install Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) on one control node (which could easily be a laptop)
+0. [Установите Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) на один управляющий узел (которым вполне может быть ноутбук)
 
 ```
 sudo apt update && sudo apt install -y python3-pip sshpass git
 pip3 install ansible
 ```
 
-1. Download or clone this repository
+1. Скачайте или клонируйте этот репозиторий
 
 ```
 git clone https://github.com/vitabaks/postgresql_cluster.git
 ```
 
-2. Go to the automation directory
+2. Перейдите в каталог автоматизации
 
 ```
 cd postgresql_cluster/automation
 ```
 
-3. Install requirements on the control node
+3. Установите требования на узле управления
 
 ```
 ansible-galaxy install --force -r requirements.yml 
 ```
 
-Note: If you plan to use Consul (`dcs_type: consul`), install the consul role requirements
+Примечание: Если вы планируете использовать Consul (`dcs_type: consul`), установите требования к роли consul
 ```
 ansible-galaxy install -r roles/consul/requirements.yml
 ```
 
-4. Edit the inventory file
+4. Отредактируйте файл инвентаризации
 
-Specify (non-public) IP addresses and connection settings (`ansible_user`, `ansible_ssh_pass` or `ansible_ssh_private_key_file` for your environment
+Укажите (непубличные) IP-адреса и параметры подключения (`ansible_user`, `ansible_ssh_pass` или `ansible_ssh_private_key_file` для вашего окружения
 
 ```
 nano inventory
 ```
 
-5. Edit the variable file vars/[main.yml](./automation/vars/main.yml)
+5. Отредактируйте файл переменных vars/[main.yml](./automation/vars/main.yml)
 
 ```
 nano vars/main.yml
 ```
 
-Minimum set of variables: 
-- `proxy_env` to download packages in environments without direct internet access (optional)
+Минимальный набор переменных: 
+- `proxy_env` для загрузки пакетов в окружении без прямого доступа в интернет (опционально)
 - `patroni_cluster_name`
 - `postgresql_version`
 - `postgresql_data_dir`
-- `cluster_vip` to provide a single entry point for client access to databases in the cluster (optional)
-- `with_haproxy_load_balancing` to enable load balancing (optional)
-- `dcs_type` "etcd" (default) or "consul"
+- `cluster_vip` для обеспечения единой точки входа для клиентского доступа к базам данных в кластере (опционально)
+- `with_haproxy_load_balancing` для включения балансировки нагрузки (необязательно)
+- `dcs_type` «etcd» (по умолчанию) или «consul»
 
-See the vars/[main.yml](./automation/vars/main.yml), [system.yml](./automation/vars/system.yml) and ([Debian.yml](./automation/vars/Debian.yml) or [RedHat.yml](./automation/vars/RedHat.yml)) files for more details.
+Подробнее см. в файлах vars/[main.yml](./automation/vars/main.yml), [system.yml](./automation/vars/system.yml) и ([Debian.yml](./automation/vars/Debian.yml) или [RedHat.yml](./automation/vars/RedHat.yml)).
 
-6. Try to connect to hosts
+6. Попробуйте подключиться к хостам
 
 ```
 ansible all -m ping
 ```
 
-7. Run playbook:
+7. Запустите плейбук:
 
 ```
 ansible-playbook deploy_pgcluster.yml
 ```
 
-#### Deploy Cluster with TimescaleDB
+#### Развертывание кластера с TimescaleDB
 
-To deploy a PostgreSQL High-Availability Cluster with the [TimescaleDB](https://github.com/timescale/timescaledb) extension, add the `enable_timescale` variable:
+Чтобы развернуть кластер PostgreSQL High-Availability Cluster с расширением [TimescaleDB](https://github.com/timescale/timescaledb), добавьте переменную `enable_timescale`:
 
-Example:
+Пример:
 ```
-ansible-playbook deploy_pgcluster.yml -e "enable_timescale=true"
+ansible-playbook deploy_pgcluster.yml -e «enable_timescale=true»
 ```
 
 [![asciicast](https://asciinema.org/a/251019.svg)](https://asciinema.org/a/251019?speed=5)
 
-### How to start from scratch
+### Как начать с нуля
 
-If you need to start from the very beginning, you can use the playbook `remove_cluster.yml`.
+Если вам нужно начать с самого начала, вы можете воспользоваться плейбуком `remove_cluster.yml`.
 
-Available variables:
-- `remove_postgres`: stop the PostgreSQL service and remove data.
-- `remove_etcd`: stop the ETCD service and remove data.
-- `remove_consul`: stop the Consul service and remove data.
+Доступные переменные:
+- `remove_postgres`: остановить службу PostgreSQL и удалить данные.
+- `remove_etcd`: остановить службу ETCD и удалить данные.
+- `remove_consul`: остановить службу Consul и удалить данные.
 
-Run the following command to remove specific components:
+Выполните следующую команду для удаления определенных компонентов:
 
-```bash
-ansible-playbook remove_cluster.yml -e "remove_postgres=true remove_etcd=true"
+``bash
+ansible-playbook remove_cluster.yml -e «remove_postgres=true remove_etcd=true»
 ```
 
-This command will delete the specified components, allowing you to start a new installation from scratch.
+Эта команда удалит указанные компоненты, что позволит вам начать новую установку с нуля.
 
-:warning: **Caution:** be careful when running this command in a production environment.
+:warning: **Осторожно:** будьте внимательны при выполнении этой команды в производственной среде.
 
 </p></details>
 
 ## Star us
 
-If you find our project helpful, consider giving it a star on GitHub! Your support helps us grow and motivates us to keep improving. Starring the project is a simple yet effective way to show your appreciation and help others discover it.
+Если вы считаете наш проект полезным, поставьте ему звезду на GitHub! Ваша поддержка помогает нам развиваться и мотивирует нас продолжать совершенствоваться. Пометить проект звездой - это простой, но эффективный способ выразить свою признательность и помочь другим обнаружить его.
 
-<a href="https://star-history.com/#vitabaks/postgresql_cluster&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=vitabaks/postgresql_cluster&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=vitabaks/postgresql_cluster&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=vitabaks/postgresql_cluster&type=Date" />
- </picture>
+<a href=«https://star-history.com/#vitabaks/postgresql_cluster&Date»>
+<картинка>
+<source media=«(prefers-color-scheme: dark)» srcset=«https://api.star-history.com/svg?repos=vitabaks/postgresql_cluster&type=Date&theme=dark» />
+<source media=«(prefers-color-scheme: light)» srcset=«https://api.star-history.com/svg?repos=vitabaks/postgresql_cluster&type=Date» />
+<img alt=«Диаграмма звездной истории» src=«https://api.star-history.com/svg?repos=vitabaks/postgresql_cluster&type=Date» />
+</picture
 </a>
 
-## Sponsor this project
+## Спонсируйте этот проект
 
-By sponsoring our project, you directly contribute to its continuous improvement and innovation. As a sponsor, you'll receive exclusive benefits, including personalized support, early access to new features, and the opportunity to influence the project's direction. Your sponsorship is invaluable to us and helps ensure the project's sustainability and progress.
+Спонсируя наш проект, вы вносите непосредственный вклад в его постоянное совершенствование и инновации. В качестве спонсора вы получите эксклюзивные преимущества, включая индивидуальную поддержку, ранний доступ к новым функциям и возможность влиять на направление развития проекта. Ваша спонсорская поддержка бесценна для нас и помогает обеспечить устойчивость и прогресс проекта.
 
-Become a sponsor today and help us take this project to the next level!
+Станьте спонсором сегодня и помогите нам вывести проект на новый уровень!
 
-Support our work through [GitHub Sponsors](https://github.com/sponsors/vitabaks)
+Поддержите нашу работу через [GitHub Sponsors](https://github.com/sponsors/vitabaks)
 
 [![GitHub Sponsors](https://img.shields.io/github/sponsors/vitabaks?style=for-the-badge)](https://github.com/sponsors/vitabaks)
 
-Support our work through [Patreon](https://www.patreon.com/vitabaks)
+Поддержите нашу работу через [Patreon](https://www.patreon.com/vitabaks)
 
-[![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dvitabaks%26type%3Dpatrons&style=for-the-badge)](https://patreon.com/vitabaks)
+[![Поддержите меня на Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dvitabaks%26type%3Dpatrons&style=for-the-badge)](https://patreon.com/vitabaks)
 
-Support our work through a crypto wallet:
+Поддержите нашу работу через криптокошелек:
 
-USDT (TRC20): `TSTSXZzqDCUDHDjZwCpuBkdukjuDZspwjj`
+USDT (TRC20): `TSTSXZzqDCUDHDjZwCpuBkdukjuDZspwjj`.
 
-## License
-Licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+## Лицензия
+Лицензируется в соответствии с лицензией MIT. Подробности см. в файле [LICENSE](./LICENSE).
 
-## Author
-Vitaliy Kukharik (PostgreSQL DBA) \
+## Автор
+Виталий Кухарик (PostgreSQL DBA) \
 vitabaks@gmail.com
 
-## Feedback, bug-reports, requests, ...
-Are [welcome](https://github.com/vitabaks/postgresql_cluster/issues)!
+## Отзывы, баг-репорты, запросы, ...
+[приветствуются](https://github.com/vitabaks/postgresql_cluster/issues)!
